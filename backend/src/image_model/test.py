@@ -1,29 +1,44 @@
 import os
 import numpy as np
-from keras.preprocessing import image
+import tensorflow as tf
 from keras.models import load_model
+import pandas as pd
+from config.logger_config import configure_logger
 
-def predict_on_test_images(model_path='models/cnn_image_model.h5', test_dir='../data/images/test'):
+logger = configure_logger()
+
+def predict_on_test_images_batch(model_path='models/cnn_image_model.keras', test_dir='data/images/test', threshold=0.5, batch_size=32):
     model = load_model(model_path)
+
+    # Chargement dataset test par batch avec tf.keras.utils.image_dataset_from_directory
+    test_ds = tf.keras.utils.image_dataset_from_directory(
+        test_dir,
+        image_size=(128, 128),
+        batch_size=batch_size,
+        label_mode=None,  # Pas besoin des labels pour la prédiction
+        shuffle=False
+    )
+
+    # Normalisation (comme à l'entraînement)
+    normalization_layer = tf.keras.layers.Rescaling(1./255)
+    test_ds = test_ds.map(lambda x: normalization_layer(x))
+
+    filenames = sorted([
+        fname for fname in os.listdir(test_dir)
+        if fname.lower().endswith(('.png', '.jpg', '.jpeg'))
+    ])
+
     results = []
+    idx = 0
 
-    for fname in sorted(os.listdir(test_dir)):
-        if fname.lower().endswith(('.png', '.jpg', '.jpeg')):
-            img_path = os.path.join(test_dir, fname)
-            img = image.load_img(img_path, target_size=(128, 128))
-            img_array = image.img_to_array(img) / 255.0
-            img_array = np.expand_dims(img_array, axis=0)  # Batch size 1
+    for batch in test_ds:
+        preds = model.predict(batch)
+        for pred in preds:
+            score = float(pred[0])
+            label = 'dog' if score > threshold else 'cat'
+            fname = filenames[idx]
+            logger.info(f"Image: {fname}, Prediction score: {score:.4f}, Label: {label}")
+            results.append({'filename': fname, 'score': score, 'label': label})
+            idx += 1
 
-            pred = model.predict(img_array)[0][0]  # Prédit un score binaire (entre 0 et 1)
-
-            # Convertir la prédiction en label (par exemple, seuil 0.5)
-            label = 'dog' if pred > 0.5 else 'cat'
-
-            print(f"Image: {fname}, Prediction score: {pred:.4f}, Label: {label}")
-
-            results.append((fname, pred, label))
-
-    return results
-
-if __name__ == '__main__':
-    predict_on_test_images()
+    return pd.DataFrame(results)

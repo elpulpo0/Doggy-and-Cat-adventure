@@ -6,12 +6,15 @@
 backend/
 ├── data/
 │   ├── images/          # Dataset image (chats/chiens)
+├── ├── ├── train/
+├── ├── └── test/
 │   ├── audio/           # Dataset audio (aboiement, miaulement, pas)
-│   └── processed/       # Données préparées (spectrogrammes, splits, etc.)
-├── notebooks/           # Analyses exploratoires, prototypage modèles
+│   ├── processed/       # Données préparées (spectrogrammes, splits, etc.)
+│   └── logs/
 ├── src/
 │   ├── image_model/     # Modèles et entraînement vision (CNN, MobileNet...)
 │   │   ├── train.py
+│   │   ├── test.py
 │   │   ├── model.py
 │   │   └── utils.py
 │   ├── audio_model/     # Modèles et entraînement audio (MFCC, CNN audio...)
@@ -50,7 +53,15 @@ frontend/
 **Clone this repository**
 
 ```bash
-git clone https://github.com/elpulpo0/Dashboard_Totem.git
+git clone https://github.com/elpulpo0/[...].git
+```
+
+**Téléchargez les fichiers**
+
+Assurez vous d'abord d'avoir enregistré le token API de kaggle : https://www.kaggle.com/settings -> API
+
+```sh
+cd backend && python scripts/download_datas.py
 ```
 
 Open 2 different terminals:

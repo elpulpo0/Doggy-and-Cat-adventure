@@ -48,4 +48,6 @@ __init__.py
 
 # Generated Data
 backend/logs/*
-data/*
+backend/data/*
+backend/models/*
+backend/tests_results/*
