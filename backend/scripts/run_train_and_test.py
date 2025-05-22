@@ -1,5 +1,14 @@
 import os
 import pandas as pd
+import torch
+
+# Configuration automatique du device (MPS pour Mac Apple Silicon si dispo)
+if torch.backends.mps.is_available():
+    device = torch.device("mps")
+    print("✅ Utilisation de MPS (GPU Apple)")
+else:
+    # remplacé par détection auto
+    print("⚠️ MPS non disponible, fallback sur CPU")
 
 from src.image_model.train import train_image_model
 from src.image_model.test import predict_on_test_images_batch
