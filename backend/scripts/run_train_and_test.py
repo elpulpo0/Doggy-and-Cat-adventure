@@ -19,7 +19,7 @@ from src.audio_model.test import predict_audio
 from config.logger_config import configure_logger
 from config.device_choice import choose_device
 
-logger = configure_logger()
+logger = configure_logger("Script d'entrainement et de tests")
 
 simple_image_model_path='models/simple_cnn_image_model.keras'
 complex_image_model_path='models/simple_cnn_image_model.keras'

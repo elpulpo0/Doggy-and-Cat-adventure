@@ -6,7 +6,7 @@ import subprocess
 from config.logger_config import configure_logger
 
 # Configuration du logger
-logger = configure_logger()
+logger = configure_logger("Script d'importation des datasets")
 
 def download_and_extract_kaggle_dataset(competition_name, dest_folder):
     """Télécharge et extrait les fichiers zip du dataset Kaggle competition."""
