@@ -54,14 +54,6 @@ frontend/                         # Frontend (streamlit, react, autre)
 git clone https://github.com/elpulpo0/[...].git
 ```
 
-Open 2 different terminals:
-
-# Backend (in terminal 1)
-
-```bash
-cd backend
-```
-
 **Create a virtual environnement**
 
 ```bash
@@ -82,6 +74,14 @@ python.exe -m pip install --upgrade pip
 
 ```bash
 pip install -r requirements.txt
+```
+
+Open 2 different terminals:
+
+# Backend (in terminal 1)
+
+```bash
+cd backend
 ```
 
 **Téléchargez les fichiers**
