@@ -1,8 +1,8 @@
-from tensorflow.keras.applications import MobileNetV2
+from keras.applications import MobileNetV2
 from keras import layers, models
 
 
-def build_transfer_model(input_shape=(128, 128, 3), num_classes=1):
+def build_transfer_model(input_shape=(128, 128, 3), num_classes=2):
     base_model = MobileNetV2(input_shape=input_shape,
                              include_top=False,
                              weights='imagenet')

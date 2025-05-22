@@ -1,7 +1,6 @@
 from keras import layers, models, Input
-import tensorflow as tf
 
-def build_simple_cnn(input_shape=(128,128,3), num_classes=1):
+def build_simple_cnn(input_shape=(128,128,3), num_classes=2):
     model = models.Sequential([
         Input(shape=input_shape),
         layers.Conv2D(32, (3, 3), activation='relu'),
@@ -19,7 +18,7 @@ def build_simple_cnn(input_shape=(128,128,3), num_classes=1):
     )
     return model
 
-def build_complex_cnn(input_shape=(128,128,3), num_classes=1):
+def build_complex_cnn(input_shape=(128,128,3), num_classes=2):
     model = models.Sequential([
         Input(shape=input_shape),
         layers.Conv2D(32, (3, 3), activation='relu'),

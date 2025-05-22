@@ -25,7 +25,7 @@ def train_image_model(model_type, data_dir, model_path, epochs=5, batch_size=32,
         data_dir,
         image_size=img_size,
         batch_size=batch_size,
-        label_mode='binary',
+        label_mode='categorical',
         shuffle=True,
         seed=123,
     )
