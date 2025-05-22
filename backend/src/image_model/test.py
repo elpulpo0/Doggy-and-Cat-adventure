@@ -1,5 +1,4 @@
 import os
-import numpy as np
 import tensorflow as tf
 from keras.models import load_model
 import pandas as pd
@@ -7,7 +6,7 @@ from config.logger_config import configure_logger
 
 logger = configure_logger()
 
-def predict_on_test_images_batch(model_path='models/cnn_image_model.keras', test_dir='data/images/test', threshold=0.5, batch_size=32):
+def predict_on_test_images_batch(model_path, test_dir='data/images/test', threshold=0.5, batch_size=32):
     model = load_model(model_path)
 
     # Chargement dataset test par batch avec tf.keras.utils.image_dataset_from_directory

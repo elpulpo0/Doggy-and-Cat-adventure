@@ -5,47 +5,45 @@
 ```sh
 backend/
 ├── data/
-│   ├── images/          # Dataset image (chats/chiens)
-├── ├── ├── train/
-├── ├── └── test/
-│   ├── audio/           # Dataset audio (aboiement, miaulement, pas)
-│   ├── processed/       # Données préparées (spectrogrammes, splits, etc.)
-│   └── logs/
+│   ├── images/
+│   │   ├── train/
+│   │   └── test/
+│   ├── audio/
+│   │   ├── train/
+│   │   └── test/
+├── logs/                         # Logs de l'entraînement / inférence
 ├── src/
-│   ├── image_model/     # Modèles et entraînement vision (CNN, MobileNet...)
+│   ├── image_model/              # Modèles et scripts liés aux images
 │   │   ├── train.py
 │   │   ├── test.py
 │   │   ├── model.py
-│   │   └── utils.py
-│   ├── audio_model/     # Modèles et entraînement audio (MFCC, CNN audio...)
+│   ├── audio_model/              # Modèles et scripts liés à l'audio
 │   │   ├── train.py
+│   │   ├── test.py
 │   │   ├── model.py
-│   │   └── utils.py
-│   ├── multimodal/      # Fusion image + audio
+│   ├── multimodal/               # Fusion multimodale image + audio
 │   │   ├── train.py
-│   │   ├── model.py
 │   │   └── utils.py
-│   └── inference/       # Prétraitement + chargement modèles pour l'inférence
+│   └── inference/                # Inference centralisée
 │       ├── predictor.py
-│       └── audio_utils.py
+│       └── utils.py
 ├── app/
-│   ├── api/             # API FastAPI
+│   ├── api/                      # API FastAPI
 │   │   ├── main.py
 │   │   └── endpoints.py
-│   └── tests/           # Tests unitaires/fonctionnels
+│   └── tests/                    # Tests de l'application
 │       ├── test_api.py
 │       └── test_models.py
 ├── config/
-│   ├── config.yaml      # Paramètres modèles / chemin data
-│   └── logging.yaml     # Configuration des logs
-├── mlruns/              # Dossier généré par MLflow (automatique)
-├── models/              # Modèles entraînés sauvegardés
-├── monitoring/          # Config Prometheus, Grafana (déploiement)
-├── .github/workflows/   # CI/CD GitHub Actions
+│   └── logger_config.py
+├── mlruns/                       # Généré automatiquement par MLflow
+├── models/                       # Modèles entraînés (sauvegarde .keras, .h5, etc.)
+├── monitoring/                   # Prometheus, Grafana, scripts de déploiement monitoring
+├── .github/workflows/           # GitHub Actions (CI/CD)
 ├── requirements.txt
 ├── README.md
-└── main.py              # Point d’entrée global pour exécution / test
-frontend/
+└── main.py                       # Point d’entrée global
+frontend/                         # Frontend (streamlit, react, autre)
 ```
 
 ## Installation
@@ -54,14 +52,6 @@ frontend/
 
 ```bash
 git clone https://github.com/elpulpo0/[...].git
-```
-
-**Téléchargez les fichiers**
-
-Assurez vous d'abord d'avoir enregistré le token API de kaggle : https://www.kaggle.com/settings -> API
-
-```sh
-cd backend && python scripts/download_datas.py
 ```
 
 Open 2 different terminals:
@@ -93,6 +83,22 @@ python.exe -m pip install --upgrade pip
 ```bash
 pip install -r requirements.txt
 ```
+
+**Téléchargez les fichiers**
+
+Assurez vous d'abord d'avoir enregistré le token API de kaggle : https://www.kaggle.com/settings -> API
+
+```sh
+python -m scripts.download_datas
+```
+
+**Créez, entrainez et testez les modèles**
+
+```sh
+python -m scripts.run_train_and_test
+```
+
+=======================================================
 
 **Run the app**
 

@@ -1,11 +1,7 @@
-import sys
 import os
 import shutil
 import zipfile
 import subprocess
-
-# Ajouter le dossier parent de 'scripts' au path pour pouvoir importer 'config'
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from config.logger_config import configure_logger
 

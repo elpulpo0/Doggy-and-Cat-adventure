@@ -1,12 +1,12 @@
 import tensorflow as tf
 from keras.callbacks import EarlyStopping, ModelCheckpoint
-from src.image_model.model import build_simple_cnn
+from src.image_model.models import build_simple_cnn, build_complex_cnn
 from config.logger_config import configure_logger
 import os
 
 logger = configure_logger()
 
-def train_model(data_dir='data/images/train', model_path='models/cnn_image_model.keras', epochs=5, batch_size=32):
+def train_image_model(model_type, data_dir, model_path, epochs=5, batch_size=32):
     logger.info(f"🧪 Début de l'entraînement du modèle CNN avec les images depuis {data_dir}")
 
     if not os.path.exists(data_dir):
@@ -47,7 +47,14 @@ def train_model(data_dir='data/images/train', model_path='models/cnn_image_model
     logger.info("✅ Données chargées avec succès.")
     logger.info(f"🔨 Construction du modèle CNN avec input_shape=({img_size[0]}, {img_size[1]}, 3)")
 
-    model = build_simple_cnn(input_shape=(img_size[0], img_size[1], 3))
+    input_shape=(img_size[0], img_size[1], 3)
+
+    if model_type == 'simple':
+        model = build_simple_cnn()
+    elif model_type == 'complex':
+        model = build_complex_cnn(input_shape)
+    else:
+        raise ValueError("model_type inconnu")
 
     os.makedirs(os.path.dirname(model_path), exist_ok=True)
 
