@@ -48,6 +48,7 @@ def load_dataset(data_dir):
     logger.info(f"📦 Dataset chargé : {len(X)} fichiers")
     return X, y
 
+
 def train_audio_model(model_type, data_dir, model_path, epochs=10, use_wandb=False):
     logger.info("Loading and processing audio data...")
     X, y = load_dataset(data_dir)

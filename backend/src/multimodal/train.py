@@ -10,6 +10,7 @@ from config.logger_config import configure_logger
 
 logger = configure_logger()
 
+
 def build_multimodal_model(image_model_path, audio_model_path):
     image_model = load_model(image_model_path)
     audio_model = load_model(audio_model_path)
@@ -34,10 +35,11 @@ def build_multimodal_model(image_model_path, audio_model_path):
     model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
     return model
 
+
 def load_multimodal_dataset(image_dir='data/images/train', audio_dir='data/audio/train'):
     X_img, X_audio, y = [], [], []
 
-    for label, class_name in enumerate(['cats', 'dogs']):
+    for label, class_name in enumerate(['cat', 'dog']):
         img_folder = os.path.join(image_dir, class_name)
         audio_folder = os.path.join(audio_dir, class_name)
 
@@ -68,6 +70,7 @@ def load_multimodal_dataset(image_dir='data/images/train', audio_dir='data/audio
 
     return X_img, X_audio, y
 
+
 def main():
     logger.info("🔄 Chargement des données...")
     X_img, X_audio, y = load_multimodal_dataset()
@@ -90,11 +93,12 @@ def main():
         [X_img_train, X_audio_train], y_train,
         validation_data=([X_img_val, X_audio_val], y_val),
         epochs=10,
-        batch_size=32,
+        batch_size=16,
         callbacks=[checkpoint]
     )
 
     logger.info("✅ Entraînement terminé. Modèle sauvegardé : models/multimodal_model.keras")
+
 
 if __name__ == "__main__":
     main()

@@ -15,12 +15,14 @@ logger = configure_logger("Script d'entrainement et de tests")
 # Modèles image
 simple_image_model_path = 'models/simple_cnn_image_model.keras'
 complex_image_model_path = 'models/complex_cnn_image_model.keras'
-transfer_image_model_path      = 'models/transfer_cnn_image_model.keras'
+transfer_image_model_path = 'models/transfer_cnn_image_model.keras'
+
 
 # Modèles audio
-simple_audio_model_path  = 'models/simple_cnn_audio_model.keras'
+simple_audio_model_path = 'models/simple_cnn_audio_model.keras'
 complex_audio_model_path = 'models/complex_cnn_audio_model.keras'
 transfer_audio_model_path = 'models/transfer_cnn_audio_model.keras'
+
 
 def main():
     logger.info("==== DÉMARRAGE DU PIPELINE ==== 🚀")
