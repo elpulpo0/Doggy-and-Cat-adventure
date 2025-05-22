@@ -12,21 +12,18 @@ from config.device_choice import choose_device
 
 logger = configure_logger("Script d'entrainement et de tests")
 
+
 simple_image_model_path='models/simple_cnn_image_model.keras'
 complex_image_model_path='models/simple_cnn_image_model.keras'
-
+transfer_model_path = 'models/transfer_cnn_image_model.keras'
 audio_model_path='models/cnn_audio_model.keras'
+
 
 def main():
     logger.info("==== DÉMARRAGE DU PIPELINE ==== 🚀")
 
     # Défini le device pour l'entrainement
     choose_device()
-
-    # Définition des chemins
-    simple_image_model_path = 'models/simple_cnn_image_model.keras'
-    complex_image_model_path = 'models/complex_cnn_image_model.keras'
-    audio_model_path = 'models/cnn_audio_model.keras'
     
     test_dir = 'data/images/test'
 
@@ -37,6 +34,7 @@ def main():
     model_infos = [
         ("simple", simple_image_model_path),
         ("complex", complex_image_model_path),
+        ("transfer", transfer_model_path),
     ]
     
     for model_type, model_path in model_infos:

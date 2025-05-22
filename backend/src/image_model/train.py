@@ -6,6 +6,7 @@ import os
 
 logger = configure_logger()
 
+
 def train_image_model(model_type, data_dir, model_path, epochs=5, batch_size=32):
     logger.info(f"🧪 Début de l'entraînement du modèle CNN avec les images depuis {data_dir}")
 
@@ -47,12 +48,15 @@ def train_image_model(model_type, data_dir, model_path, epochs=5, batch_size=32)
     logger.info("✅ Données chargées avec succès.")
     logger.info(f"🔨 Construction du modèle CNN avec input_shape=({img_size[0]}, {img_size[1]}, 3)")
 
-    input_shape=(img_size[0], img_size[1], 3)
+    # input_shape=(img_size[0], img_size[1], 3)
 
-    if model_type == 'simple':
+    if model_type == 'transfer':
+        from .transfer_model import build_transfer_model
+        model = build_transfer_model()
+    elif model_type == 'simple':
         model = build_simple_cnn()
     elif model_type == 'complex':
-        model = build_complex_cnn(input_shape)
+        model = build_complex_cnn()
     else:
         raise ValueError("model_type inconnu")
 
