@@ -14,7 +14,7 @@ logger = configure_logger("Script d'entrainement et de tests")
 
 
 simple_image_model_path='models/simple_cnn_image_model.keras'
-complex_image_model_path='models/simple_cnn_image_model.keras'
+complex_image_model_path='models/complex_cnn_image_model.keras'
 transfer_model_path = 'models/transfer_cnn_image_model.keras'
 audio_model_path='models/cnn_audio_model.keras'
 
