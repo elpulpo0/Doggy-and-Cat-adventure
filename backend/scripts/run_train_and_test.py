@@ -61,7 +61,7 @@ def main():
     # 3. Entraînement du modèle audio
     logger.info("➡️ Entraînement du modèle audio...")
     if os.path.exists(audio_model_path):
-        logger.info(f"⚠️ Le modèle audio existe déjà à l'emplacement {audio_model_path}. Entraînement ignoré.")
+        logger.info(f"⚠️ Le modèle audio existe déjà. Entraînement ignoré.")
     else:
         train_audio_model()
 
@@ -74,7 +74,7 @@ def main():
     # Sauvegarde résultats image
     if isinstance(image_results, pd.DataFrame):
         image_results.to_csv(f'{results_dir}/results_image_concat.csv', index=False)
-        logger.info("✅ Résultats image sauvegardés dans tests_results/results_image.csv")
+        logger.info("✅ Résultats image sauvegardés.")
     else:
         logger.warning("⚠️ image_results n'est pas un DataFrame, CSV non généré.")
 
@@ -86,7 +86,7 @@ def main():
             else:
                 raise ValueError("audio_results ne peut pas être converti en DataFrame")
         audio_results.to_csv(f'{results_dir}/results_audio.csv', index=False)
-        logger.info("✅ Résultats audio sauvegardés dans tests_results/results_audio.csv")
+        logger.info("✅ Résultats audio sauvegardés.")
     except Exception as e:
         logger.error(f"❌ Erreur lors de la sauvegarde des résultats audio : {e}")
 
