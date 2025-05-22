@@ -8,6 +8,7 @@ from src.audio_model.train import train_audio_model
 from src.audio_model.test import predict_audio
 
 from config.logger_config import configure_logger
+from config.device_choice import choose_device
 
 logger = configure_logger()
 
@@ -18,6 +19,9 @@ audio_model_path='models/cnn_audio_model.keras'
 
 def main():
     logger.info("==== DÉMARRAGE DU PIPELINE ==== 🚀")
+
+    # Défini le device pour l'entrainement
+    choose_device()
 
     # Définition des chemins
     simple_image_model_path = 'models/simple_cnn_image_model.keras'
