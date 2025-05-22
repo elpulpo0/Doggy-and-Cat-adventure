@@ -1,6 +1,6 @@
 import tensorflow as tf
 from keras.callbacks import EarlyStopping, ModelCheckpoint
-from src.image_model.models import build_simple_cnn, build_complex_cnn
+from src.image_model.models import build_simple_cnn, build_complex_cnn, build_transfer_model
 from config.logger_config import configure_logger
 import os
 import wandb
@@ -54,7 +54,6 @@ def train_image_model(model_type, data_dir, model_path, epochs=5, batch_size=32,
     # input_shape=(img_size[0], img_size[1], 3)
 
     if model_type == 'transfer':
-        from .transfer_model import build_transfer_model
         model = build_transfer_model()
     elif model_type == 'simple':
         model = build_simple_cnn()
@@ -92,7 +91,7 @@ def train_image_model(model_type, data_dir, model_path, epochs=5, batch_size=32,
     logger.info(f"💾 Modèle sauvegardé dans : {model_path}")
 
     final_epoch = len(history.history['loss']) - 1
-    logger.info(f"📊 Métriques à l'époque finale (epoch {final_epoch + 1}):")
+    logger.info(f"📊 Final metrics (epoch {final_epoch + 1}):")
     logger.info(f"   🔹 Train Loss: {history.history['loss'][final_epoch]:.4f} | Train Accuracy: {history.history['accuracy'][final_epoch]:.4f}")
     logger.info(f"   🔹 Val   Loss: {history.history['val_loss'][final_epoch]:.4f} | Val   Accuracy: {history.history['val_accuracy'][final_epoch]:.4f}")
 

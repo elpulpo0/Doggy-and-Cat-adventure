@@ -1,50 +1,54 @@
 import os
-import librosa
 import numpy as np
+import librosa
 from sklearn.model_selection import train_test_split
 from keras.callbacks import EarlyStopping, ModelCheckpoint
-from src.audio_model.model import build_audio_cnn
+from src.audio_model.models import (
+    build_simple_audio_cnn,
+    build_complex_audio_cnn,
+    build_transfer_audio_model
+)
 from config.logger_config import configure_logger
+import datetime
+import wandb
+from wandb.integration.keras import WandbMetricsLogger
 
 logger = configure_logger()
 
-def extract_mfcc(file_path, max_pad_len=173):
+def extract_mfcc(file_path, max_pad_len=173, n_mfcc=40):
     try:
         audio, sr = librosa.load(file_path, sr=None)
-        mfcc_feat = librosa.feature.mfcc(y=audio, sr=sr, n_mfcc=40)  # arguments nommés et usage direct
-        if mfcc_feat.shape[1] < max_pad_len:
-            pad_width = max_pad_len - mfcc_feat.shape[1]
-            mfcc_feat = np.pad(mfcc_feat, pad_width=((0, 0), (0, pad_width)), mode='constant')
+        mfcc = librosa.feature.mfcc(y=audio, sr=sr, n_mfcc=n_mfcc)
+        if mfcc.shape[1] < max_pad_len:
+            pad_width = max_pad_len - mfcc.shape[1]
+            mfcc = np.pad(mfcc, ((0, 0), (0, pad_width)), mode='constant')
         else:
-            mfcc_feat = mfcc_feat[:, :max_pad_len]
-        return mfcc_feat
+            mfcc = mfcc[:, :max_pad_len]
+        return mfcc
     except Exception as e:
-        logger.error(f"Error processing {file_path}: {e}")
+        logger.error(f"❌ Erreur MFCC sur {file_path} : {e}")
         return None
 
 def load_dataset(data_dir):
     X, y = [], []
-    for label, folder in enumerate(['cat', 'dog']):
-        folder_path = os.path.join(data_dir, folder)
-        if not os.path.exists(folder_path):
-            logger.error(f"Folder does not exist: {folder_path}")
+    for label, class_name in enumerate(['cat', 'dog']):
+        folder = os.path.join(data_dir, class_name)
+        if not os.path.isdir(folder):
+            logger.warning(f"Dossier manquant : {folder}")
             continue
-        files = os.listdir(folder_path)
-        if not files:
-            logger.warning(f"No files found in {folder_path}")
-        for fname in files:
+        for fname in os.listdir(folder):
             if fname.endswith('.wav'):
-                path = os.path.join(folder_path, fname)
+                path = os.path.join(folder, fname)
                 mfcc = extract_mfcc(path)
                 if mfcc is not None:
                     X.append(mfcc)
                     y.append(label)
-                else:
-                    logger.warning(f"MFCC extraction failed for {path}")
-    logger.info(f"Loaded {len(X)} samples from {data_dir}")
-    return np.array(X), np.array(y)
+    X = np.array(X)
+    y = np.array(y)
+    logger.info(f"📦 Dataset chargé : {len(X)} fichiers")
+    return X, y
 
-def train_audio_model(data_dir='data/audio/train', model_path='models/cnn_audio_model.keras', epochs=10):
+def train_audio_model(model_type, data_dir, model_path, epochs=10, use_wandb=False):
     logger.info("Loading and processing audio data...")
     X, y = load_dataset(data_dir)
 
@@ -52,7 +56,10 @@ def train_audio_model(data_dir='data/audio/train', model_path='models/cnn_audio_
         logger.error("No data found. Please check your dataset path and files.")
         return
 
-    X = X[..., np.newaxis]  # Ajoute la dimension des canaux
+    if model_type == 'transfer':
+        X = np.repeat(X[..., np.newaxis], 3, axis=-1)  # pour VGG16
+    else:
+        X = X[..., np.newaxis]  # shape = (40, 173, 1)
 
     try:
         X_train, X_val, y_train, y_val = train_test_split(
@@ -62,21 +69,54 @@ def train_audio_model(data_dir='data/audio/train', model_path='models/cnn_audio_
         logger.error(f"Error during train_test_split: {e}")
         return
 
-    model = build_audio_cnn(input_shape=X.shape[1:])
+    logger.info(f"Input shape: {X.shape[1:]}, Model type: {model_type}")
+
+    # Construction du modèle
+    if model_type == 'simple':
+        model = build_simple_audio_cnn(input_shape=X.shape[1:])
+    elif model_type == 'complex':
+        model = build_complex_audio_cnn(input_shape=X.shape[1:])
+    elif model_type == 'transfer':
+        model = build_transfer_audio_model(input_shape=X.shape[1:])
+    else:
+        raise ValueError("model_type must be 'simple', 'complex' or 'transfer'.")
 
     callbacks = [
         EarlyStopping(patience=3, restore_best_weights=True),
         ModelCheckpoint(model_path, save_best_only=True)
     ]
 
-    logger.info("Training CNN model on audio data...")
+    # Intégration wandb
+    if use_wandb:
+        logger.info("🔗 Initialisation de wandb...")
+        if wandb is None:
+            logger.error("wandb non installé, impossible d'utiliser wandb.")
+        else:
+            wandb.init(project="Dogs&Cats_Project", name=f"{model_type}_image_cnn_{datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S')}", config={
+                    "model_type": model_type,
+                    "epochs": epochs,
+                    "input_shape": X.shape[1:]
+                })
+            logger.info(f"✅ wandb initialisé avec le run ID : {wandb.run.id}")
+            callbacks.append(WandbMetricsLogger())
+
+    logger.info(f"🚀 Lancement de l'entraînement pour {epochs} epochs...")
     history = model.fit(
         X_train, y_train,
         validation_data=(X_val, y_val),
         epochs=epochs,
-        callbacks=callbacks
+        callbacks=callbacks,
+        verbose=1
     )
 
-    acc = history.history.get("accuracy", [None])[-1]
-    val_acc = history.history.get("val_accuracy", [None])[-1]
-    logger.info(f"Training completed. Final accuracy: {acc:.4f}, Validation accuracy: {val_acc:.4f}")
+    final_epoch = len(history.history['loss']) - 1
+    logger.info(f"📊 Final metrics (epoch {final_epoch + 1}):")
+    logger.info(f"   🔹 Train Loss: {history.history['loss'][final_epoch]:.4f}")
+    logger.info(f"   🔹 Train Accuracy: {history.history['accuracy'][final_epoch]:.4f}")
+    logger.info(f"   🔹 Val   Loss: {history.history['val_loss'][final_epoch]:.4f}")
+    logger.info(f"   🔹 Val   Accuracy: {history.history['val_accuracy'][final_epoch]:.4f}")
+
+    if wandb:
+        wandb.finish()
+
+    return history
