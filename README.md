@@ -54,14 +54,6 @@ frontend/                         # Frontend (streamlit, react, autre)
 git clone https://github.com/elpulpo0/[...].git
 ```
 
-Open 2 different terminals:
-
-# Backend (in terminal 1)
-
-```bash
-cd backend
-```
-
 **Create a virtual environnement**
 
 ```bash
@@ -84,9 +76,18 @@ python.exe -m pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
+Open 2 different terminals:
+
+# Backend (in terminal 1)
+
+```bash
+cd backend
+```
+
 **Téléchargez les fichiers**
 
 Assurez vous d'abord d'avoir enregistré le token API de kaggle : https://www.kaggle.com/settings -> API
+(Pour télécharger les fichiers, il faut cliquer sur "Join the competition" dans l'onglet "Data" sur https://www.kaggle.com/competitions/dogs-vs-cats/data)
 
 ```sh
 python -m scripts.download_datas

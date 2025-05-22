@@ -5,7 +5,6 @@ from sklearn.model_selection import train_test_split
 from keras.callbacks import EarlyStopping, ModelCheckpoint
 from src.audio_model.model import build_audio_cnn
 from config.logger_config import configure_logger
-from librosa.feature import mfcc as librosa_mfcc  # import explicite avec alias
 
 logger = configure_logger()
 
