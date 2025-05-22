@@ -3,11 +3,13 @@ from keras.callbacks import EarlyStopping, ModelCheckpoint
 from src.image_model.models import build_simple_cnn, build_complex_cnn
 from config.logger_config import configure_logger
 import os
+import wandb
+from wandb.integration.keras import WandbMetricsLogger
 
 logger = configure_logger()
 
 
-def train_image_model(model_type, data_dir, model_path, epochs=5, batch_size=32):
+def train_image_model(model_type, data_dir, model_path, epochs=5, batch_size=32, use_wandb=False, wandb_project_name="image_cnn_training"):
     logger.info(f"🧪 Début de l'entraînement du modèle CNN avec les images depuis {data_dir}")
 
     if not os.path.exists(data_dir):
@@ -67,6 +69,21 @@ def train_image_model(model_type, data_dir, model_path, epochs=5, batch_size=32)
         ModelCheckpoint(model_path, save_best_only=True, verbose=1)
     ]
 
+    # Intégration wandb
+    if use_wandb:
+        logger.info("🔗 Initialisation de wandb...")
+        if wandb is None:
+            logger.error("wandb non installé, impossible d'utiliser wandb.")
+        else:
+            wandb.init(project=wandb_project_name, config={
+                "model_type": model_type,
+                "epochs": epochs,
+                "batch_size": batch_size,
+                "image_size": img_size
+            })
+            logger.info(f"✅ wandb initialisé avec le run ID : {wandb.run.id}")
+            callbacks.append(WandbMetricsLogger())
+
     logger.info(f"🚀 Lancement de l'entraînement pour {epochs} epochs...")
     history = model.fit(train_ds, epochs=epochs, validation_data=val_ds, callbacks=callbacks)
 
@@ -78,4 +95,8 @@ def train_image_model(model_type, data_dir, model_path, epochs=5, batch_size=32)
     logger.info(f"   🔹 Train Loss: {history.history['loss'][final_epoch]:.4f} | Train Accuracy: {history.history['accuracy'][final_epoch]:.4f}")
     logger.info(f"   🔹 Val   Loss: {history.history['val_loss'][final_epoch]:.4f} | Val   Accuracy: {history.history['val_accuracy'][final_epoch]:.4f}")
 
+    # Fin wandb
+    if use_wandb and wandb is not None:
+        wandb.finish()
+    
     return history

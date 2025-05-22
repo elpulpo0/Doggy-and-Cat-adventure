@@ -40,7 +40,7 @@ def main():
     for model_type, model_path in model_infos:
         if not os.path.exists(model_path):
             logger.info(f"➡️ Entraînement du modèle {model_type}...")
-            train_image_model(model_type=model_type, data_dir="data/images/train", model_path=model_path)
+            train_image_model(model_type=model_type, data_dir="data/images/train", model_path=model_path, use_wandb=True)
         else:
             logger.info(f"⚠️ Le modèle {model_type} existe déjà, entraînement ignoré.")
 

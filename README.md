@@ -36,10 +36,10 @@ backend/
 │       └── test_models.py
 ├── config/
 │   └── logger_config.py
-├── mlruns/                       # Généré automatiquement par MLflow
+├── wandb/                        # Généré automatiquement par WandB
 ├── models/                       # Modèles entraînés (sauvegarde .keras, .h5, etc.)
 ├── monitoring/                   # Prometheus, Grafana, scripts de déploiement monitoring
-├── .github/workflows/           # GitHub Actions (CI/CD)
+├── .github/workflows/            # GitHub Actions (CI/CD)
 ├── requirements.txt
 ├── README.md
 └── main.py                       # Point d’entrée global

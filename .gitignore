@@ -49,5 +49,6 @@ __init__.py
 # Generated Data
 backend/logs/*
 backend/data/*
+backend/wandb/*
 backend/models/*
 backend/tests_results/*
