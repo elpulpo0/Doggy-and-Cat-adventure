@@ -5,27 +5,24 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+def log_format(record):
+    my_name = record["extra"].get("my_name", record["name"])
+    custom = "Custom logs by El Pulpo"
+    return (
+        f"<green>{custom}</green> | "
+        f"<cyan>{record['time']:YYYY-MM-DD HH:mm:ss}</cyan> | "
+        f"<blue>{my_name}</blue> | "
+        f"<level>{record['level'].name}</level> | "
+        f"<magenta>{record['message']}</magenta>\n"
+    )
 
-def configure_logger():
+def configure_logger(my_name=None):
     logger.remove()
 
-    # Créer un dossier de logs s'il n'existe pas
     log_dir = BASE_DIR / "logs"
     os.makedirs(log_dir, exist_ok=True)
 
-    # Format de log avec une coloration automatique des niveaux grâce à la
-    # balise <level>
-    log_format = (
-        "<cyan>{time:YYYY-MM-DD HH:mm:ss}</cyan> | "
-        "<blue>{name}</blue> | "
-        "<level>{level}</level> | "
-        "<magenta>{message}</magenta>"
-    )
-
-    # Console
     logger.add(sys.stderr, level="DEBUG", format=log_format)
-
-    # Fichier général (tous les logs)
     logger.add(
         f"{log_dir}/app.log",
         rotation="1 week",
@@ -33,8 +30,6 @@ def configure_logger():
         level="INFO",
         format=log_format,
     )
-
-    # Fichier uniquement pour ERROR
     logger.add(
         f"{log_dir}/error.log",
         level="ERROR",
@@ -43,8 +38,6 @@ def configure_logger():
         retention="10 days",
         format=log_format,
     )
-
-    # Fichier uniquement pour DEBUG
     logger.add(
         f"{log_dir}/debug.log",
         level="DEBUG",
@@ -54,4 +47,7 @@ def configure_logger():
         format=log_format,
     )
 
-    return logger
+    if my_name:
+        return logger.bind(my_name=my_name)
+    else:
+        return logger
