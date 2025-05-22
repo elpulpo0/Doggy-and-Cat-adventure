@@ -25,7 +25,8 @@ def main():
     audio_model_path = 'models/cnn_audio_model.keras'
     
     test_dir = 'data/images/test'
-    results_dir = 'results'
+
+    results_dir = 'tests_results'
     os.makedirs(results_dir, exist_ok=True)
 
     # 1. Entraînement des modèles image
@@ -47,7 +48,7 @@ def main():
         logger.info(f"🔍 Prédiction avec le modèle {model_type}...")
         df = predict_on_test_images_batch(model_path=model_path, test_dir=test_dir)
         df['model'] = model_type
-        df.to_csv(f"{results_dir}/predictions_{model_type}.csv", index=False)
+        df.to_csv(f"{results_dir}/results_image_{model_type}.csv", index=False)
         all_results.append(df)
 
     # Fusion des résultats image
@@ -65,11 +66,10 @@ def main():
     audio_results = predict_audio()
 
     # 5. Sauvegarde des résultats dans le dossier tests_results
-    os.makedirs('tests_results', exist_ok=True)
 
     # Sauvegarde résultats image
     if isinstance(image_results, pd.DataFrame):
-        image_results.to_csv('tests_results/results_image.csv', index=False)
+        image_results.to_csv(f'{results_dir}/results_image_concat.csv', index=False)
         logger.info("✅ Résultats image sauvegardés dans tests_results/results_image.csv")
     else:
         logger.warning("⚠️ image_results n'est pas un DataFrame, CSV non généré.")
@@ -81,7 +81,7 @@ def main():
                 audio_results = pd.DataFrame(audio_results)
             else:
                 raise ValueError("audio_results ne peut pas être converti en DataFrame")
-        audio_results.to_csv('tests_results/results_audio.csv', index=False)
+        audio_results.to_csv(f'{results_dir}/results_audio.csv', index=False)
         logger.info("✅ Résultats audio sauvegardés dans tests_results/results_audio.csv")
     except Exception as e:
         logger.error(f"❌ Erreur lors de la sauvegarde des résultats audio : {e}")
