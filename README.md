@@ -84,10 +84,18 @@ Open 2 different terminals:
 cd backend
 ```
 
-**Téléchargez les fichiers**
+**Loggez vous sur Kaggle et WandB**
 
-Assurez vous d'abord d'avoir enregistré le token API de kaggle : https://www.kaggle.com/settings -> API
+- Pour Kaggle :
+
+Assurez vous d'avoir enregistré le token API de kaggle : https://www.kaggle.com/settings -> API
 (Pour télécharger les fichiers, il faut cliquer sur "Join the competition" dans l'onglet "Data" sur https://www.kaggle.com/competitions/dogs-vs-cats/data)
+
+- Pour WandB :
+
+`wandb login`
+
+**Téléchargez les fichiers**
 
 ```sh
 python -m scripts.download_datas

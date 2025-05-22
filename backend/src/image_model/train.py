@@ -5,11 +5,12 @@ from config.logger_config import configure_logger
 import os
 import wandb
 from wandb.integration.keras import WandbMetricsLogger
+import datetime
 
 logger = configure_logger()
 
 
-def train_image_model(model_type, data_dir, model_path, epochs=5, batch_size=32, use_wandb=False, wandb_project_name="image_cnn_training"):
+def train_image_model(model_type, data_dir, model_path, epochs=5, batch_size=32, use_wandb=False):
     logger.info(f"🧪 Début de l'entraînement du modèle CNN avec les images depuis {data_dir}")
 
     if not os.path.exists(data_dir):
@@ -75,7 +76,7 @@ def train_image_model(model_type, data_dir, model_path, epochs=5, batch_size=32,
         if wandb is None:
             logger.error("wandb non installé, impossible d'utiliser wandb.")
         else:
-            wandb.init(project=wandb_project_name, config={
+            wandb.init(project="Dogs&Cats_Project", name=f"{model_type}_image_cnn_{datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S')}", config={
                 "model_type": model_type,
                 "epochs": epochs,
                 "batch_size": batch_size,
