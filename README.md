@@ -78,57 +78,82 @@ pip install -r requirements.txt
 
 Open 2 different terminals:
 
-# Backend (in terminal 1)
+## Lancer le projet – Backend (Terminal 1)
 
 ```bash
 cd backend
 ```
 
-**Loggez vous sur Kaggle et WandB**
+### Connexion aux services externes
 
-- Pour Kaggle :
+* **Kaggle** : place ton fichier `kaggle.json` dans `~/.kaggle/`
+  (obtenu sur [https://www.kaggle.com/account](https://www.kaggle.com/account) → "Create API Token")
+* **WandB** (si utilisé) :
 
-Assurez vous d'avoir enregistré le token API de kaggle : https://www.kaggle.com/settings -> API
-(Pour télécharger les fichiers, il faut cliquer sur "Join the competition" dans l'onglet "Data" sur https://www.kaggle.com/competitions/dogs-vs-cats/data)
+```bash
+wandb login
+```
 
-- Pour WandB :
+---
 
-`wandb login`
+### Télécharger les données
 
-**Téléchargez les fichiers**
-
-```sh
+```bash
 python -m scripts.download_datas
 ```
 
-**Créez, entrainez et testez les modèles**
+### Entraîner les modèles image/audio
 
-```sh
+```bash
 python -m scripts.run_train_and_test
 ```
 
-=======================================================
+---
 
-**Run the app**
+### Lancer l’API FastAPI
 
 ```bash
-uvicorn run:app --reload
+uvicorn main:app --reload
 ```
 
-# Frontend (in terminal 2)
+Cela démarre une API REST sur :
+
+* Swagger UI : [http://localhost:8000/docs](http://localhost:8000/docs)
+* Endpoint actif : `POST /predict/image`
+  → prend un fichier `.jpg/.png` et retourne `{"prediction": ..., "confidence": ...}`
+
+---
+
+## Frontend Streamlit (Terminal 2)
 
 ```bash
 cd frontend
+streamlit run app.py
 ```
 
-**Install dependencies**
+### Ce que fait l'interface :
 
-```bash
-npm install
-```
+* Permet d’**uploader une image**
+* Affiche l’image avec une **animation stylée (Lottie)**
+* Envoie la requête à l’API FastAPI `/predict/image`
+* Affiche la **prédiction** (`Chien` ou `Chat`) + **niveau de confiance (%)**
+* Barre de progression + messages UX pour guider l’utilisateur
 
-**Run the app**
+---
 
-```bash
-npm run dev
-```
+### À noter :
+
+* Le frontend Streamlit ne contient pas de logique métier : il **consomme l’API backend**.
+* Le modèle est chargé côté FastAPI pour des raisons de sécurité et de scalabilité.
+* L’inférence est centralisée pour un futur support audio/multimodal.
+
+---
+
+## En résumé :
+
+| Composant   | Tech utilisée                              | Rôle                                    |
+| ----------- | ------------------------------------------ | --------------------------------------- |
+| API backend | FastAPI + TensorFlow                       | Point d’entrée des prédictions IA       |
+| Frontend UI | Streamlit + Lottie                         | Interface utilisateur, légère et stylée |
+| Modèles IA  | CNN, MobileNetV2                           | Classifieur Chien / Chat (via image)    |
+| Déploiement | Local (dev), compatible HuggingFace/Render | Facilement extensible                   |
