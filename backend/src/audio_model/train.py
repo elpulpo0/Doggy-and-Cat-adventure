@@ -31,7 +31,7 @@ def extract_mfcc(file_path, max_pad_len=173, n_mfcc=40):
 
 def load_dataset(data_dir):
     X, y = [], []
-    for label, class_name in enumerate(['cat', 'dog']):
+    for label, class_name in enumerate(['cats', 'dogs']):
         folder = os.path.join(data_dir, class_name)
         if not os.path.isdir(folder):
             logger.warning(f"Dossier manquant : {folder}")
@@ -53,15 +53,26 @@ def train_audio_model(model_type, data_dir, model_path, epochs=10, use_wandb=Fal
     logger.info("Loading and processing audio data...")
     X, y = load_dataset(data_dir)
 
+    if model_type == 'transfer':
+        if X.shape[2] > 173:
+            X = X[:, :, :173]
+        elif X.shape[2] < 173:
+            pad_width = 173 - X.shape[2]
+            X = np.pad(X, ((0, 0), (0, 0), (0, pad_width)), mode='constant')
+        X = np.repeat(X[..., np.newaxis], 3, axis=-1)
+    else:
+        if X.shape[2] != 173:
+            if X.shape[2] > 173:
+                X = X[:, :, :173]
+            else:
+                pad_width = 173 - X.shape[2]
+                X = np.pad(X, ((0, 0), (0, 0), (0, pad_width)), mode='constant')
+        X = X[..., np.newaxis]
+
     if len(X) == 0:
         logger.error("No data found. Please check your dataset path and files.")
         return
-
-    if model_type == 'transfer':
-        X = np.repeat(X[..., np.newaxis], 3, axis=-1)  # pour VGG16
-    else:
-        X = X[..., np.newaxis]  # shape = (40, 173, 1)
-
+    
     try:
         X_train, X_val, y_train, y_val = train_test_split(
             X, y, test_size=0.2, stratify=y, random_state=42
