@@ -3,10 +3,15 @@ import numpy as np
 from keras.models import load_model
 from src.audio_model.train import extract_mfcc
 from config.logger_config import configure_logger
+import soundfile as sf
+import tensorflow_hub as hub
+import tensorflow as tf
+
+yamnet_model = hub.load('https://tfhub.dev/google/yamnet/1')
 
 logger = configure_logger()
 
-def predict_audio(model_path='models/cnn_audio_model.keras', test_dir='data/audio/test', batch_size=16, model_type='simple'):
+def predict_audio(model_path, test_dir, batch_size, model_type):
     """
     Prédit les classes audio à partir des fichiers wav dans test_dir,
     avec un modèle Keras chargé depuis model_path.
@@ -25,6 +30,9 @@ def predict_audio(model_path='models/cnn_audio_model.keras', test_dir='data/audi
     audio_results = []
     all_mfccs = []
     all_fnames = []
+
+    if model_type == 'yamnet':
+        return predict_with_yamnet(model_path=model_path, test_dir=test_dir, batch_size=batch_size)
 
     for label_folder in ['cats', 'dogs']:
         folder_path = os.path.join(test_dir, label_folder)
@@ -86,3 +94,71 @@ def predict_audio(model_path='models/cnn_audio_model.keras', test_dir='data/audi
 
     logger.info(f"✅ Prédiction terminée: {len(audio_results)} fichiers traités.")
     return audio_results
+
+
+def load_wav_16k_mono(filename):
+    wav, sr = sf.read(filename)
+    if sr != 16000:
+        logger.warning(f"❗️Sample rate différent de 16kHz pour {filename}, audio ignoré.")
+        return None
+    if wav.ndim > 1:
+        wav = np.mean(wav, axis=1)
+    return wav.astype(np.float32)
+
+def predict_with_yamnet(model_path, test_dir, batch_size):
+    model = load_model(model_path)
+    filenames = []
+    embeddings = []
+
+    for label_folder in ['cats', 'dogs']:
+        folder_path = os.path.join(test_dir, label_folder)
+        if not os.path.exists(folder_path):
+            logger.warning(f"Dossier non trouvé: {folder_path}")
+            continue
+
+        for fname in os.listdir(folder_path):
+            if not fname.endswith('.wav'):
+                continue
+            full_path = os.path.join(folder_path, fname)
+            waveform = load_wav_16k_mono(full_path)
+            if waveform is None:
+                continue
+
+            waveform_tf = tf.convert_to_tensor(waveform, dtype=tf.float32)
+            try:
+                # Extraire embedding Yamnet
+                embedding = yamnet_model(waveform_tf)[1]  # embeddings (frames, 1024)
+                mean_embedding = tf.reduce_mean(embedding, axis=0).numpy()  # moyenne sur les frames
+                embeddings.append(mean_embedding)
+                filenames.append(fname)
+            except Exception as e:
+                logger.error(f"Erreur extraction embedding sur {fname}: {e}")
+                continue
+
+    if not embeddings:
+        logger.warning("Pas d'embeddings valides extraits, arrêt de la prédiction.")
+        return []
+
+    X = np.vstack(embeddings)  # shape (N, embedding_dim)
+
+    results = []
+    num_batches = int(np.ceil(len(X) / batch_size))
+    logger.info(f"Traitement de {len(filenames)} fichiers en {num_batches} batches avec batch_size={batch_size}")
+
+    for i in range(num_batches):
+        batch_X = X[i*batch_size : (i+1)*batch_size]
+        batch_preds = model.predict(batch_X, verbose=0)
+        for j, pred in enumerate(batch_preds):
+            idx = i*batch_size + j
+            score = float(pred[0])
+            predicted_label = 'dog' if score > 0.5 else 'cat'
+            results.append({
+                'file': filenames[idx],
+                'score': round(score, 4),
+                'predicted': predicted_label,
+            })
+
+    logger.info(f"✅ Prédictions YAMNet terminées: {len(results)} fichiers traités.")
+    return results
+
+

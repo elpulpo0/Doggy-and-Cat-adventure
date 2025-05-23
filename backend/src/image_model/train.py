@@ -10,7 +10,7 @@ import datetime
 logger = configure_logger()
 
 
-def train_image_model(model_type, data_dir, model_path, epochs=5, batch_size=32, use_wandb=False):
+def train_image_model(model_type, data_dir, model_path, epochs=10, batch_size=16, use_wandb=False):
     logger.info(f"🧪 Début de l'entraînement du modèle CNN avec les images depuis {data_dir}")
 
     if not os.path.exists(data_dir):
