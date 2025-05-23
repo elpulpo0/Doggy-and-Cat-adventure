@@ -59,12 +59,18 @@ if uploaded_file:
                 result = response.json()
 
                 label = result['prediction'].upper()
-                confidence = round(float(result['confidence']) * 100, 2)
+                prediction_raw = float(result['confidence'])
+
+                # si le modèle prédit CHAT, on prend 1 - score
+                if label.lower() == "chien":
+                    confidence = round(prediction_raw * 100, 2)
+                else:
+                    confidence = round((1 - prediction_raw) * 100, 2)
 
                 st.success(f"✅ **{label}** détecté avec une confiance de {confidence} %")
                 st.progress(min(int(confidence), 100))
 
-                st.markdown("🔬 *Ce modèle n’est pas infaillible. Il donne une estimation basée sur l’apprentissage supervisé.*")
+                st.markdown("*Ce modèle n’est pas infaillible. Il donne une estimation basée sur l’apprentissage supervisé.*")
 
             except requests.exceptions.RequestException as e:
                 st.error("❌ Erreur lors de l'appel à l'API.")
