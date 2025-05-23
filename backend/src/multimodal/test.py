@@ -1,43 +1,30 @@
 import os
-from src.inference.predictor import MultimodalPredictor
+import numpy as np
+import tensorflow as tf
+import tensorflow_hub as hub
+import librosa
 from config.logger_config import configure_logger
+from src.inference.utils import load_image_tensor
 
 logger = configure_logger()
 
-def batch_test():
-    predictor = MultimodalPredictor(model_path='models/multimodal_model.keras')
 
-    chiens = [1, 2, 3, 4, 12, 17, 18]
-    chats = [5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 19, 20]
+def extract_yamnet_embedding(wav_path):
+    waveform, sr = librosa.load(wav_path, sr=16000)
+    waveform = waveform[:16000 * 10]
+    waveform_tensor = tf.convert_to_tensor(waveform, dtype=tf.float32)
+    _, embeddings, _ = hub.load("https://tfhub.dev/google/yamnet/1")(waveform_tensor)
+    return tf.reduce_mean(embeddings, axis=0).numpy()
 
-    image_test_dir = 'data/images/test'
-    audio_test_dir = 'data/audio/test'
 
-    dog_audio_files = sorted(os.listdir(os.path.join(audio_test_dir, 'dogs')))
-    cat_audio_files = sorted(os.listdir(os.path.join(audio_test_dir, 'cats')))
+def test_multimodal_yamnet():
+    model = tf.keras.models.load_model("models/multimodal_yamnet_model.keras")
+    img = load_image_tensor("data/images/test/dog.9999.jpg")
+    audio = extract_yamnet_embedding("data/audio/test/dog_barking_99.wav")
 
-    assert len(dog_audio_files) >= len(chiens), f"Pas assez de fichiers audio chiens"
-    assert len(cat_audio_files) >= len(chats), f"Pas assez de fichiers audio chats"
+    img_batch = np.expand_dims(img, axis=0)
+    audio_batch = np.expand_dims(audio, axis=0)
 
-    logger.info("=== Début des tests Chiens ===")
-    for img_num, audio_file in zip(chiens, dog_audio_files):
-        image_path = f"{image_test_dir}/{img_num}.jpg"
-        audio_path = os.path.join(audio_test_dir, 'dogs', audio_file)
-        try:
-            class_id, conf, label = predictor.predict(image_path, audio_path)
-            logger.info(f"Paire {img_num}.jpg / {audio_file} --> Classe={class_id} ({label}), Confiance={conf*100:.2f}%")
-        except Exception as e:
-            logger.error(f"Erreur sur test chiens {img_num}: {e}")
-
-    logger.info("=== Début des tests Chats ===")
-    for img_num, audio_file in zip(chats, cat_audio_files):
-        image_path = f"{image_test_dir}/{img_num}.jpg"
-        audio_path = os.path.join(audio_test_dir, 'cats', audio_file)
-        try:
-            class_id, conf, label = predictor.predict(image_path, audio_path)
-            logger.info(f"Paire {img_num}.jpg / {audio_file} --> Classe={class_id} ({label}), Confiance={conf*100:.2f}%")
-        except Exception as e:
-            logger.error(f"Erreur sur test chats {img_num}: {e}")
-
-if __name__ == "__main__":
-    batch_test()
+    prediction = model.predict([img_batch, audio_batch])[0][0]
+    label = "chien" if prediction > 0.5 else "chat"
+    logger.info(f"🐾 Prédiction : {label.upper()} ({round(prediction*100, 2)}%)")

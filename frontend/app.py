@@ -25,7 +25,7 @@ st_lottie(lottie_anim, height=200, key="header_anim")
 st.title("🐾 Prédiction IA : Chien ou Chat")
 
 # Tabs pour image vs audio
-mode = st.tabs(["🖼️ Image", "🎧 Audio"])
+mode = st.tabs(["🖼️ Image", "🎧 Audio", "🧩 Multimodal"])
 
 with mode[0]:
     st.markdown("""
@@ -97,3 +97,39 @@ with mode[1]:
                 except requests.exceptions.RequestException as e:
                     st.error("❌ Erreur lors de l'appel à l'API audio.")
                     st.exception(e)
+with mode[2]:
+    st.markdown("""
+    Combine une image **et** un son pour une prédiction plus fiable !
+    """)
+
+    uploaded_image = st.file_uploader("🖼️ Upload une image", type=["jpg", "jpeg", "png"], key="multi_image")
+    uploaded_audio = st.file_uploader("🎧 Upload un son", type=["wav"], key="multi_audio")
+
+    if uploaded_image and uploaded_audio:
+        st.image(uploaded_image, caption="Image sélectionnée", use_container_width=True)
+        st.audio(uploaded_audio, format="audio/wav")
+
+        if st.button("Lancer la prédiction multimodale", key="predict_multimodal"):
+            with st.spinner("Fusion image + audio en cours..."):
+                try:
+                    files = {
+                        "image": (uploaded_image.name, uploaded_image.getvalue(), uploaded_image.type),
+                        "audio": (uploaded_audio.name, uploaded_audio.getvalue(), uploaded_audio.type),
+                    }
+                    response = requests.post("http://localhost:8000/predict/multimodal", files=files)
+                    response.raise_for_status()
+                    result = response.json()
+
+                    label = result['prediction'].upper()
+                    prediction_raw = float(result['confidence'])
+                    confidence = round(prediction_raw * 100, 2) if label.lower() == "chien" else round((1 - prediction_raw) * 100, 2)
+
+                    st.success(f"🤝 Fusion détecte un **{label}** avec une confiance de {confidence} %")
+                    st.progress(min(int(confidence), 100))
+                    st.markdown("🧠 *La prédiction multimodale combine les forces de l'image et du son.*")
+
+                except requests.exceptions.RequestException as e:
+                    st.error("❌ Erreur lors de l'appel à l'API multimodale.")
+                    st.exception(e)
+    else:
+        st.info("💡 Merci d’uploader une image **et** un fichier audio .wav pour lancer la prédiction.")

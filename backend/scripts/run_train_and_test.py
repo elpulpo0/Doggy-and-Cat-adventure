@@ -1,111 +1,59 @@
 import os
-import pandas as pd
-
-from src.image_model.train import train_image_model
-from src.image_model.test import predict_on_test_images_batch
-
-from src.audio_model.train import train_audio_model
-from src.audio_model.test import predict_audio
 
 from config.logger_config import configure_logger
 from config.device_choice import choose_device
 
-logger = configure_logger("Script d'entrainement et de tests")
+# Image training + prediction
+from src.image_model.train import train_image_model
+from src.image_model.test import predict_on_test_images_batch
 
-# Modèles image
-simple_image_model_path = 'models/simple_cnn_image_model.keras'
-complex_image_model_path = 'models/complex_cnn_image_model.keras'
-transfer_image_model_path = 'models/transfer_cnn_image_model.keras'
+# Multimodal YAMNet
+from src.multimodal.train import train_multimodal_yamnet
+from src.multimodal.test import test_multimodal_yamnet
+
+logger = configure_logger("Pipeline Complet")
+choose_device()
+
+# === Paths ===
+IMAGE_TRAIN_DIR = "data/images/train"
+IMAGE_TEST_DIR = "data/images/test"
+RESULTS_DIR = "tests_results"
+MODEL_IMAGE_PATH = "models/transfer_cnn_image_model.keras"
+MODEL_MULTIMODAL_PATH = "models/multimodal_yamnet_model.keras"
+
+os.makedirs(RESULTS_DIR, exist_ok=True)
 
 
-# Modèles audio
-simple_audio_model_path = 'models/simple_cnn_audio_model.keras'
-complex_audio_model_path = 'models/complex_cnn_audio_model.keras'
-transfer_audio_model_path = 'models/transfer_cnn_audio_model.keras'
+def run_pipeline():
+    logger.info("Pipeline complet démarré.")
 
+    # === Étape 1 : Image transfer learning ===
+    if not os.path.exists(MODEL_IMAGE_PATH):
+        logger.info("Entraînement du modèle image (MobileNetV2)")
+        train_image_model(model_type="transfer", data_dir=IMAGE_TRAIN_DIR, model_path=MODEL_IMAGE_PATH, use_wandb=True)
+    else:
+        logger.info("✅ Modèle image déjà entraîné")
 
-def main():
-    logger.info("==== DÉMARRAGE DU PIPELINE ==== 🚀")
+    try:
+        df_image = predict_on_test_images_batch(model_path=MODEL_IMAGE_PATH, test_dir=IMAGE_TEST_DIR)
+        df_image['model'] = 'image_transfer'
+        df_image.to_csv(f"{RESULTS_DIR}/results_image_transfer.csv", index=False)
+    except Exception as e:
+        logger.error(f"❌ Prédiction image échouée : {e}")
 
-    choose_device()
-    
-    test_dir = 'data/images/test'
-    image_train_dir = "data/images/train"
-    audio_train_dir = "data/audio/train"
-    results_dir = 'tests_results'
-    os.makedirs(results_dir, exist_ok=True)
+    # === Étape 2 : Multimodal (image + YAMNet audio) ===
+    if not os.path.exists(MODEL_MULTIMODAL_PATH):
+        logger.info("➡️ Entraînement du modèle multimodal avec YAMNet")
+        train_multimodal_yamnet()
+    else:
+        logger.info("✅ Modèle multimodal déjà entraîné")
 
-    # === 1. Entraînement des modèles image ===
-    image_model_infos = [
-        # ("simple", simple_image_model_path),
-        # ("complex", complex_image_model_path),
-        ("transfer", transfer_image_model_path),
-    ]
-    
-    for model_type, model_path in image_model_infos:
-        if not os.path.exists(model_path):
-            logger.info(f"➡️ Entraînement du modèle image {model_type}...")
-            train_image_model(model_type=model_type, data_dir=image_train_dir, model_path=model_path, use_wandb=True)
-        else:
-            logger.info(f"⚠️ Le modèle image {model_type} existe déjà, entraînement ignoré.")
+    try:
+        test_multimodal_yamnet()
+    except Exception as e:
+        logger.error(f"❌ Test multimodal échoué : {e}")
 
-    # === 2. Prédictions sur les images test ===
-    all_image_results = []
-    for model_type, model_path in image_model_infos:
-        logger.info(f"🔍 Prédiction avec le modèle image {model_type}...")
+    logger.info("✅ Pipeline complet terminé.")
 
-        try:
-            df = predict_on_test_images_batch(model_path=model_path, test_dir=test_dir)
-            if df is not None and not df.empty:
-                df['model'] = f"image_{model_type}"
-                df.to_csv(f"{results_dir}/results_image_{model_type}.csv", index=False)
-                all_image_results.append(df)
-            else:
-                logger.warning(f"⚠️ Résultat vide pour le modèle image {model_type}.")
-        except Exception as e:
-            logger.error(f"❌ Erreur lors de la prédiction avec le modèle image {model_type} : {e}")
-
-    # === 3. Entraînement des modèles audio ===
-    audio_model_infos = [
-        # ("simple", simple_audio_model_path),
-        # ("complex", complex_audio_model_path),
-        ("transfer", transfer_audio_model_path),
-    ]
-
-    for model_type, model_path in audio_model_infos:
-        if not os.path.exists(model_path):
-            logger.info(f"➡️ Entraînement du modèle audio {model_type}...")
-            train_audio_model(model_type=model_type, data_dir=audio_train_dir, model_path=model_path, use_wandb=True)
-        else:
-            logger.info(f"⚠️ Le modèle audio {model_type} existe déjà. Entraînement ignoré.")
-
-    # === 4. Prédictions audio ===
-    all_audio_results = []
-    for model_type, model_path in audio_model_infos:
-        logger.info(f"🔍 Prédiction avec le modèle audio {model_type}...")
-
-        try:
-            results = predict_audio(model_path=model_path, model_type=model_type)
-            if results:
-                df = pd.DataFrame(results)
-                df['model'] = f"audio_{model_type}"
-                df.to_csv(f"{results_dir}/results_audio_{model_type}.csv", index=False)
-                all_audio_results.append(df)
-            else:
-                logger.warning(f"⚠️ Résultat vide pour le modèle audio {model_type}.")
-        except Exception as e:
-            logger.error(f"❌ Erreur lors de la prédiction avec le modèle audio {model_type} : {e}")
-
-    # === 5. Fusion et sauvegardes des résultats ===
-    for result_type, all_results in [("image", all_image_results), ("audio", all_audio_results)]:
-        try:
-            result_df = pd.concat(all_results, ignore_index=True)
-            result_df.to_csv(f'{results_dir}/results_{result_type}_concat.csv', index=False)
-            logger.info(f"✅ Résultats {result_type} sauvegardés.")
-        except Exception as e:
-            logger.error(f"❌ Erreur lors de la sauvegarde des résultats {result_type} : {e}")
-
-    logger.info("✅ Pipeline terminé avec succès et résultats sauvegardés.")
-
-if __name__ == '__main__':
-    main()
+if __name__ == "__main__":
+    run_pipeline()

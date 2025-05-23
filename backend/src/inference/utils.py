@@ -3,7 +3,7 @@ from config.logger_config import configure_logger
 
 logger = configure_logger()
 
-def preprocess_image(image_path, target_size=(128, 128)):
+def load_image_tensor(image_path, target_size=(128, 128)):
     try:
         img = image.load_img(image_path, target_size=target_size)
         img_array = image.img_to_array(img) / 255.0
