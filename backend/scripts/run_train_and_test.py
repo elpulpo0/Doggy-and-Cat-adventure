@@ -37,8 +37,8 @@ def main():
 
     # === 1. Entraînement des modèles image ===
     image_model_infos = [
-        ("simple", simple_image_model_path),
-        ("complex", complex_image_model_path),
+        # ("simple", simple_image_model_path),
+        # ("complex", complex_image_model_path),
         ("transfer", transfer_image_model_path),
     ]
     
@@ -67,8 +67,8 @@ def main():
 
     # === 3. Entraînement des modèles audio ===
     audio_model_infos = [
-        ("simple", simple_audio_model_path),
-        ("complex", complex_audio_model_path),
+        # ("simple", simple_audio_model_path),
+        # ("complex", complex_audio_model_path),
         ("transfer", transfer_audio_model_path),
     ]
 
