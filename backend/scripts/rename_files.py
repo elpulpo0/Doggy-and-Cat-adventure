@@ -4,6 +4,15 @@ from config.logger_config import configure_logger
 
 logger = configure_logger("Renommage des fichiers")
 
+def ensure_plural_folder_names(base_dir):
+    """S'assure que les dossiers sont au pluriel ('cat' -> 'cats', 'dog' -> 'dogs')."""
+    corrections = {'cat': 'cats', 'dog': 'dogs'}
+    for singular, plural in corrections.items():
+        old_path = os.path.join(base_dir, singular)
+        new_path = os.path.join(base_dir, plural)
+        if os.path.exists(old_path) and not os.path.exists(new_path):
+            os.rename(old_path, new_path)
+            logger.info(f"Dossier renommé : {old_path} -> {new_path}")
 
 def rename_files_in_directory(directory, prefix, extension):
     logger.info(f"Renommage des fichiers dans {directory} avec le préfixe '{prefix}'")
@@ -30,11 +39,15 @@ def rename_files_in_directory(directory, prefix, extension):
     logger.info(f"Tous les fichiers dans {directory} ont été renommés.")
 
 def rename_all():
+    # Correction des noms de dossiers s'ils sont au singulier
+    ensure_plural_folder_names('data/images/train')
+    ensure_plural_folder_names('data/audio/train')
+
     base_dirs = [
         ('data/images/train/cats', 'cat', '.jpg'),
         ('data/images/train/dogs', 'dog', '.jpg'),
-        ('data/audio/train/cat', 'cat', '.wav'),
-        ('data/audio/train/dog', 'dog', '.wav'),
+        ('data/audio/train/cats', 'cat', '.wav'),
+        ('data/audio/train/dogs', 'dog', '.wav'),
     ]
 
     for path, prefix, ext in base_dirs:
