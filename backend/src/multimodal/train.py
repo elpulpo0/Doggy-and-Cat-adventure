@@ -9,18 +9,9 @@ import librosa
 from config.logger_config import configure_logger
 import tensorflow_hub as hub
 from tqdm import tqdm
-from keras.preprocessing import image
+from src.inference.utils import preprocess_image
 
 logger = configure_logger()
-
-def preprocess_image(image_path, target_size=(128, 128)):
-    try:
-        img = image.load_img(image_path, target_size=target_size)
-        img_array = image.img_to_array(img) / 255.0
-        return img_array
-    except Exception as e:
-        logger.error(f"Erreur chargement image : {e}")
-        return None
 
 def extract_yamnet_embedding(wav_path):
     waveform, sr = librosa.load(wav_path, sr=16000)
