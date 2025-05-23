@@ -8,7 +8,7 @@ import io
 router = APIRouter()
 
 # Charger le classifieur entraîné et le modèle YAMNet
-classifier = tf.keras.models.load_model("models/yamnet_audio_classifier.keras")
+classifier = tf.keras.models.load_model("models/yamnet_audio_model.keras")
 yamnet_model = hub.load('https://tfhub.dev/google/yamnet/1')
 
 @router.post("/audio-yamnet")

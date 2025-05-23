@@ -6,7 +6,7 @@ import tensorflow as tf
 import io
 
 router = APIRouter()
-model = tf.keras.models.load_model("models/transfer_cnn_image_model.keras")
+model = tf.keras.models.load_model("models/transfer_image_model.keras")
 
 @router.post("/predict/image")
 async def predict_image(file: UploadFile = File(...)):
