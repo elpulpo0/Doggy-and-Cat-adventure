@@ -6,20 +6,18 @@ services:
     build: ./backend
     container_name: fastapi-app
     ports: ["8000:8000"]
-    env_file: [.env]
 
-    # ─── Volumes ────────────────────────────────────────────────
-    # 1. Tous les modèles (LogReg + CNN/YAMNet) sont centralisés
-    #    dans ./backend/models → montés sur /app/models.
+    env_file: [.env]          # ← même niveau que build/ports/volumes
+    environment:
+      - WANDB_DISABLED=true   # ← liste YAML, 6 espaces à partir du début de ligne
+
     volumes:
       - ./backend/models:/app/models
 
-    # ─── Dépendances ────────────────────────────────────────────
     depends_on:
       mlflow-server:
         condition: service_healthy
 
-    # Health-check
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request, os; urllib.request.urlopen('http://localhost:8000/health')"]
       interval: 30s
@@ -57,25 +55,22 @@ services:
   prefect-worker:
     image: prefecthq/prefect:2.14.10-python3.10
     container_name: prefect-worker
-    command: >
-      bash -c "
-        pip install --no-cache-dir \
-        prometheus_client==0.20.0 \
-        tensorflow==2.19.0 \
-        tensorflow_hub==0.16.2 &&
-        if ! prefect work-pool inspect default-agent-pool >/dev/null 2>&1; then
-        prefect work-pool create --type process default-agent-pool;
-        fi &&
-        prefect deployment apply /opt/prefect/flows/continuous-retrain.yaml &&
-        prefect deployment apply /opt/prefect/flows/dogcat-monitor.yaml &&
-        prefect agent start --pool default-agent-pool
-      "
+    command: |
+      bash -c "pip install --no-cache-dir prometheus_client==0.20.0 tensorflow==2.19.0 tensorflow_hub==0.16.1 httpx==0.27.0 loguru==0.7.3 wandb==0.19.11 librosa==0.11.0 soundfile==0.13.1 && \
+              if ! prefect work-pool inspect default-agent-pool >/dev/null 2>&1 ; then \
+                prefect work-pool create --type process default-agent-pool ; \
+              fi && \
+              prefect deployment apply /opt/prefect/flows/continuous-retrain.yaml && \
+              prefect deployment apply /opt/prefect/flows/dogcat-monitor.yaml && \
+              prefect agent start --pool default-agent-pool"
     environment:
       - PREFECT_API_URL=http://prefect-server:4200/api
       - PYTHONPATH=/app
+      - WANDB_DISABLED=true 
     volumes:
       - ./monitoring/flows:/opt/prefect/flows
       - ./backend:/app 
+      - ./backend/data:/app/data
     depends_on:
       prefect-server:
         condition: service_healthy
