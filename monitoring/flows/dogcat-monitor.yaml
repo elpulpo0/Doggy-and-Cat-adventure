@@ -1,0 +1,53 @@
+###
+### A complete description of a Prefect Deployment for flow 'monitor-dogcat'
+###
+name: dogcat-monitor
+description: null
+version: 573ce8b8bbdb69f1f073982a0fa975ef
+# The work queue that will handle this deployment's runs
+work_queue_name: default
+work_pool_name: default-agent-pool
+tags: []
+parameters: {}
+schedule:
+  cron: '*/2 * * * *'
+  timezone: null
+  day_or: true
+is_schedule_active: true
+infra_overrides: {}
+
+###
+### DO NOT EDIT BELOW THIS LINE
+###
+flow_name: monitor-dogcat
+manifest_path: null
+infrastructure:
+  type: process
+  env: {}
+  labels: {}
+  name: null
+  command: null
+  stream_output: true
+  working_dir: null
+  _block_document_id: 615ad176-2e32-457f-ad9d-800c2007b9a1
+  _block_document_name: anonymous-c1778c52-853d-4c2c-8b51-9bcf60e8289f
+  _is_anonymous: true
+  block_type_slug: process
+  _block_type_slug: process
+storage: null
+path: /opt/prefect/flows
+entrypoint: monitor_dogcat.py:monitor_dogcat
+parameter_openapi_schema:
+  title: Parameters
+  type: object
+  properties:
+    threshold:
+      title: threshold
+      default: 0.9
+      position: 0
+      type: number
+  required: null
+  definitions: null
+timestamp: '2025-06-23T14:45:14.929035+00:00'
+triggers: []
+enforce_parameter_schema: null

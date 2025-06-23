@@ -8,13 +8,18 @@ services:
     ports: ["8000:8000"]
     env_file: [.env]
 
-    # Monte les poids LogisticRegression + CNN/YAMNet
+    # ─── Volumes ────────────────────────────────────────────────
+    # 1. Tous les modèles (LogReg + CNN/YAMNet) sont centralisés
+    #    dans ./backend/models → montés sur /app/models.
     volumes:
       - ./backend/models:/app/models
-      - ./backend/app/api/models:/app/backend/app/api/models
+
+    # ─── Dépendances ────────────────────────────────────────────
     depends_on:
       mlflow-server:
         condition: service_healthy
+
+    # Health-check
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request, os; urllib.request.urlopen('http://localhost:8000/health')"]
       interval: 30s
@@ -26,9 +31,7 @@ services:
     networks: [mlops-network]
     labels: ["discord-logger.enabled=true"]
 
-# ────────────────────────────────
-# 2. Prefect 2 : Server + Worker
-# ────────────────────────────────
+  # 2. Prefect 2 : Server + Worker
   prefect-server:
     image: prefecthq/prefect:2.14.10-python3.10  
     container_name: prefect-server
@@ -56,14 +59,23 @@ services:
     container_name: prefect-worker
     command: >
       bash -c "
-        prefect work-pool create --type process default-agent-pool --overwrite &&
+        pip install --no-cache-dir \
+        prometheus_client==0.20.0 \
+        tensorflow==2.19.0 \
+        tensorflow_hub==0.16.2 &&
+        if ! prefect work-pool inspect default-agent-pool >/dev/null 2>&1; then
+        prefect work-pool create --type process default-agent-pool;
+        fi &&
         prefect deployment apply /opt/prefect/flows/continuous-retrain.yaml &&
+        prefect deployment apply /opt/prefect/flows/dogcat-monitor.yaml &&
         prefect agent start --pool default-agent-pool
       "
     environment:
       - PREFECT_API_URL=http://prefect-server:4200/api
+      - PYTHONPATH=/app
     volumes:
       - ./monitoring/flows:/opt/prefect/flows
+      - ./backend:/app 
     depends_on:
       prefect-server:
         condition: service_healthy
