@@ -1,0 +1,11 @@
+name: continuous-retrain
+entrypoint: continuous_retrain.py:continuous_retrain_flow
+work_pool:
+  name: default-pool
+  work_queue_name: default
+  job_variables: {}
+schedule:
+  type: cron
+  cron: "*/10 * * * *"
+  timezone: "Europe/Paris"
+parameters: {}

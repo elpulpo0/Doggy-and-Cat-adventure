@@ -1,0 +1,165 @@
+services:
+# ────────────────────────────────
+# 1. API unique  (backend/app)
+# ────────────────────────────────
+  fastapi-app:
+    build: ./backend
+    container_name: fastapi-app
+    ports: ["8000:8000"]
+    env_file: [.env]
+
+    # Monte les poids LogisticRegression + CNN/YAMNet
+    volumes:
+      - ./backend/models:/app/models
+      - ./backend/app/api/models:/app/backend/app/api/models
+    depends_on:
+      mlflow-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request, os; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+    restart: unless-stopped
+    networks: [mlops-network]
+    labels: ["discord-logger.enabled=true"]
+
+# ────────────────────────────────
+# 2. Prefect 2 : Server + Worker
+# ────────────────────────────────
+  prefect-server:
+    image: prefecthq/prefect:2.14.10-python3.10  
+    container_name: prefect-server
+    command: ["prefect", "server", "start", "--host", "0.0.0.0"]
+    ports: ["4200:4200"]
+    env_file: [.env]
+    environment:
+      PREFECT_HOME: /root/.prefect
+      PREFECT_API_DATABASE_CONNECTION_URL: sqlite+aiosqlite:////root/.prefect/prefect.db
+    volumes:
+      - ./monitoring/flows:/opt/prefect/flows
+      - ./monitoring/prefect-home:/root/.prefect
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:4200/api/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 45s
+    restart: unless-stopped
+    networks: [mlops-network]
+    labels: ["discord-logger.enabled=true"]
+
+  prefect-worker:
+    image: prefecthq/prefect:2.14.10-python3.10
+    container_name: prefect-worker
+    command: >
+      bash -c "
+        prefect work-pool create --type process default-agent-pool --overwrite &&
+        prefect deployment apply /opt/prefect/flows/continuous-retrain.yaml &&
+        prefect agent start --pool default-agent-pool
+      "
+    environment:
+      - PREFECT_API_URL=http://prefect-server:4200/api
+    volumes:
+      - ./monitoring/flows:/opt/prefect/flows
+    depends_on:
+      prefect-server:
+        condition: service_healthy
+    restart: unless-stopped
+    networks: [mlops-network]
+    labels: ["discord-logger.enabled=true"]
+
+# ────────────────────────────────
+# 3. MLflow – suivi d’expériences
+# ────────────────────────────────
+  mlflow-server:
+    image: ghcr.io/mlflow/mlflow:v2.9.0
+    container_name: mlflow-server
+    command: mlflow server --host 0.0.0.0 --port 5555
+             --backend-store-uri sqlite:///mlflow.db --default-artifact-root ./mlruns
+    working_dir: /mlflow
+    volumes:
+      - ./data/mlflow:/mlflow
+    ports: ["5555:5555"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5555')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+    restart: unless-stopped
+    networks: [mlops-network]
+
+# ────────────────────────────────
+# 4. Observabilité
+# ────────────────────────────────
+  prometheus:
+    image: prom/prometheus:v2.52.0
+    container_name: prometheus
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports: ["9090:9090"]
+    restart: unless-stopped
+    networks: [mlops-network]
+
+  grafana:
+    image: grafana/grafana-oss:10.4.2
+    container_name: grafana
+    ports: ["3000:3000"]
+    volumes:
+      - ./monitoring/grafana-provisioning:/etc/grafana/provisioning
+    depends_on: [prometheus]
+    restart: unless-stopped
+    networks: [mlops-network]
+
+  node-exporter:
+    image: prom/node-exporter:v1.8.1
+    container_name: node-exporter
+    ports: ["9100:9100"]
+    restart: unless-stopped
+    networks: [mlops-network]
+
+# ────────────────────────────────
+# 5. Uptime-Kuma
+# ────────────────────────────────
+  uptime-kuma:
+    image: louislam/uptime-kuma:latest
+    container_name: uptime-kuma
+    ports: ["3001:3001"]
+    volumes: ["./data/uptime-kuma:/app/data"]
+    restart: unless-stopped
+    networks: [mlops-network]
+
+# ────────────────────────────────
+# 6. Docker ➜ Discord logger
+# ────────────────────────────────
+  docker-discord-logger:
+    image: ghcr.io/1randomdev/docker-discord-logger:latest
+    container_name: docker-discord-logger
+    env_file: [.env]
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - LOG_LEVEL=WARNING
+      - FILTER_INCLUDE_LABEL=discord-logger.enabled=true
+      - FILTER_EXCLUDE_PATTERN=health|ping|GET|POST
+      - RATE_LIMIT=true
+    restart: unless-stopped
+    networks: [mlops-network]
+
+# ────────────────────────────────
+# 7. Streamlit
+# ────────────────────────────────
+  streamlit:
+    build: ./frontend
+    container_name: streamlit
+    env_file: [.env]
+    ports: ["8501:8501"]
+    networks: [mlops-network]
+
+networks:
+  mlops-network:
+    name: mlops-network
+    driver: bridge

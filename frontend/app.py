@@ -4,6 +4,9 @@ from streamlit_lottie import st_lottie
 import json
 from time import sleep
 
+# CONFIG GLOBAL
+BACKEND = os.getenv("FAST_API_URL", "http://fastapi-app:8000")
+
 # Configuration de la page
 st.set_page_config(page_title="Chien ou Chat 🐶🐱", layout="centered", page_icon="🐾")
 

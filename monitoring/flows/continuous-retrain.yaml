@@ -1,0 +1,45 @@
+###
+### A complete description of a Prefect Deployment for flow 'continuous-retrain'
+###
+name: continuous-retrain
+description: null
+version: c444fda78346483b202afa7c8cb96da0
+# The work queue that will handle this deployment's runs
+work_queue_name: default
+work_pool_name: default-agent-pool
+tags: []
+parameters: {}
+schedule:
+  cron: '*/2 * * * *'
+  timezone: null
+  day_or: true
+is_schedule_active: null
+infra_overrides: {}
+infrastructure:
+  type: process
+  env: {}
+  labels: {}
+  name: null
+  command: null
+  stream_output: true
+  working_dir: null
+  block_type_slug: process
+  _block_type_slug: process
+
+###
+### DO NOT EDIT BELOW THIS LINE
+###
+flow_name: continuous-retrain
+manifest_path: null
+storage: null
+path: /opt/prefect/flows
+entrypoint: continuous_retrain.py:continuous_retrain_flow
+parameter_openapi_schema:
+  title: Parameters
+  type: object
+  properties: {}
+  required: null
+  definitions: null
+timestamp: '2025-06-23T12:45:04.638986+00:00'
+triggers: []
+enforce_parameter_schema: null
